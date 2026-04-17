@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>0418 康軒解謎研習｜AI 玩數學</title>
+<!--
+════════════════════════════════════════════════════════════
+  0418 康軒解謎研習網頁簡報
+  主講：宋睿偉老師（三師爸）
+  日期：2026-04-18
+
+  配色規範：
+    背景 #000000 | 內文 #FFFFFF | 標題 #FF8C00 | 關鍵字 #FFD700
+
+  操作：
+    → / Space / 點擊右側 = 下一頁
+    ← = 上一頁
+    F = 全螢幕
+    P = 簡報者/觀眾模式切換
+    Esc = 離開全螢幕
+
+  IRS：Firebase Firestore (teacherstudy-109ef)
+    集合 irs_session/current  — 老師發佈題目
+    集合 irs_responses        — 學生答題記錄
+
+  圖片佔位：搜尋 data-placeholder 替換 src 即可
+════════════════════════════════════════════════════════════
+-->
+<style>
+:root {
+  --bg: #000000;
+  --text: #FFFFFF;
+  --title: #FF8C00;
+  --keyword: #FFD700;
+  --card: #1A1A1A;
+  --border: #333333;
+  --muted: #888888;
+  --accent: #00BCD4;
+  --good: #4CAF50;
+  --bad: #F44336;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+.deck {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+.slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 5vh 7vw 8vh;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  animation: fadeIn 0.4s ease;
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ 頁碼與進度條 ═══ */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: #111;
+  z-index: 100;
+}
+.topbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--title), var(--keyword));
+  transition: width 0.3s ease;
+}
+.pageinfo {
+  position: fixed;
+  bottom: 2vh;
+  right: 3vw;
+  font-size: 14px;
+  color: var(--muted);
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-hints {
+  position: fixed;
+  bottom: 2vh;
+  left: 3vw;
+  font-size: 13px;
+  color: var(--muted);
+  z-index: 100;
+  opacity: 0.6;
+}
+
+/* ═══ 標題層級 ═══ */
+h1.title {
+  font-size: clamp(36px, 5vw, 72px);
+  color: var(--title);
+  font-weight: 900;
+  margin-bottom: 3vh;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+h2.subtitle {
+  font-size: clamp(24px, 2.6vw, 40px);
+  color: var(--title);
+  font-weight: 700;
+  margin-bottom: 2vh;
+}
+h3.section {
+  font-size: clamp(20px, 2vw, 32px);
+  color: var(--title);
+  font-weight: 600;
+  margin-bottom: 1.5vh;
+}
+p, li {
+  font-size: clamp(18px, 1.7vw, 28px);
+  line-height: 1.7;
+  color: var(--text);
+}
+p.lead {
+  font-size: clamp(22px, 2.2vw, 36px);
+  line-height: 1.5;
+  color: var(--text);
+}
+.kw { color: var(--keyword); font-weight: 700; }
+.muted { color: var(--muted); }
+code, .mono {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+  background: var(--card);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--keyword);
+}
+
+/* ═══ 布局元件 ═══ */
+.cover-grid {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  height: 100%;
+}
+.cover-subline {
+  font-size: clamp(20px, 2vw, 32px);
+  color: var(--muted);
+  margin-top: 2vh;
+  letter-spacing: 0.2em;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  align-items: center;
+  height: 100%;
+}
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2vw;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform 0.3s;
+}
+.card:hover { transform: translateY(-4px); }
+.card h3 {
+  color: var(--title);
+  font-size: clamp(20px, 1.8vw, 28px);
+  margin-bottom: 12px;
+}
+.card .big-num {
+  font-size: clamp(48px, 5vw, 80px);
+  color: var(--keyword);
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+ul.bullets {
+  list-style: none;
+  padding: 0;
+}
+ul.bullets li {
+  padding: 8px 0 8px 32px;
+  position: relative;
+}
+ul.bullets li::before {
+  content: "▸";
+  color: var(--title);
+  position: absolute;
+  left: 0;
+  top: 8px;
+  font-weight: 900;
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5vw;
+  margin-top: 3vh;
+}
+.pipeline-stage {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  position: relative;
+}
+.pipeline-stage.highlight {
+  border-color: var(--title);
+  box-shadow: 0 0 30px rgba(255, 140, 0, 0.3);
+}
+.pipeline-stage .stage-num {
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: 0.3em;
+  margin-bottom: 8px;
+}
+.pipeline-stage h4 {
+  color: var(--title);
+  font-size: clamp(18px, 1.5vw, 24px);
+  margin-bottom: 12px;
+}
+.pipeline-stage p { font-size: clamp(13px, 1.1vw, 18px); }
+
+table.cmp {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2vh;
+}
+table.cmp th, table.cmp td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: clamp(16px, 1.4vw, 22px);
+}
+table.cmp th {
+  color: var(--title);
+  font-weight: 700;
+  border-bottom: 2px solid var(--title);
+}
+table.cmp td:first-child { color: var(--keyword); font-weight: 600; }
+
+.puzzle-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw;
+  align-items: stretch;
+  margin-top: 2vh;
+}
+.demo-img {
+  aspect-ratio: 16 / 9;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 16px;
+  text-align: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.demo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.demo-img .pl-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 12px;
+  color: var(--title);
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0,0,0,0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.demo-caption {
+  margin-top: 1vh;
+  color: var(--muted);
+  font-size: clamp(14px, 1.2vw, 20px);
+  text-align: center;
+}
+
+.gem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5vw 2vw;
+  margin-top: 2vh;
+}
+.gem-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.gem-tile:hover { border-color: var(--title); transform: translateY(-2px); }
+.gem-tile .subject-tag {
+  font-size: 12px;
+  color: var(--title);
+  letter-spacing: 0.2em;
+  margin-bottom: 6px;
+}
+.gem-tile h4 {
+  color: var(--keyword);
+  font-size: clamp(16px, 1.3vw, 22px);
+  margin-bottom: 6px;
+}
+.gem-tile p {
+  font-size: clamp(13px, 1vw, 17px);
+  color: var(--muted);
+}
+
+/* ═══ IRS 區塊 ═══ */
+.irs-slide {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 2vh;
+  height: 100%;
+}
+.irs-question {
+  background: var(--card);
+  border-left: 6px solid var(--title);
+  padding: 20px 24px;
+  border-radius: 0 12px 12px 0;
+}
+.irs-question .label {
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  color: var(--title);
+  margin-bottom: 6px;
+}
+.irs-question h3 {
+  font-size: clamp(22px, 2.2vw, 36px);
+  color: var(--text);
+  font-weight: 600;
+}
+.irs-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+.irs-bar {
+  display: grid;
+  grid-template-columns: 220px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.irs-bar-label {
+  color: var(--keyword);
+  font-size: clamp(16px, 1.5vw, 24px);
+  font-weight: 600;
+  text-align: right;
+}
+.irs-bar-track {
+  height: 32px;
+  background: var(--card);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.irs-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--title), var(--keyword));
+  transition: width 0.6s ease;
+  border-radius: 16px;
+}
+.irs-bar-count {
+  color: var(--text);
+  font-size: clamp(14px, 1.3vw, 22px);
+  font-family: 'JetBrains Mono', monospace;
+}
+.irs-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.btn {
+  background: var(--card);
+  color: var(--text);
+  border: 2px solid var(--border);
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn:hover { border-color: var(--title); color: var(--title); }
+.btn.primary {
+  background: var(--title);
+  color: #000;
+  border-color: var(--title);
+}
+.btn.primary:hover { background: var(--keyword); border-color: var(--keyword); }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.btn.danger:hover { background: var(--bad); color: #fff; }
+
+.irs-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--card);
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.irs-status .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.irs-status.live .dot { background: var(--good); animation: pulse 1.5s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.join-box {
+  background: var(--card);
+  border: 2px dashed var(--title);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 2vh;
+}
+.join-box .url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(20px, 2vw, 32px);
+  color: var(--keyword);
+  margin: 10px 0;
+  word-break: break-all;
+}
+.join-box .hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ═══ 點擊導航熱區 ═══ */
+.navzone {
+  position: fixed;
+  top: 0;
+  width: 30vw;
+  height: 100vh;
+  z-index: 50;
+  cursor: pointer;
+}
+.navzone.left { left: 0; }
+.navzone.right { right: 0; }
+
+/* ═══ 簡報者筆記 ═══ */
+.notes {
+  position: fixed;
+  bottom: 8vh;
+  left: 3vw;
+  right: 3vw;
+  max-height: 20vh;
+  overflow-y: auto;
+  background: rgba(40, 20, 0, 0.95);
+  border: 1px solid var(--title);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 15px;
+  color: var(--keyword);
+  display: none;
+  z-index: 80;
+}
+.notes.visible { display: block; }
+.notes-label {
+  color: var(--title);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  margin-bottom: 6px;
+}
+
+/* ═══ 3 階段流程圖特化 ═══ */
+.big-pipeline {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: stretch;
+  gap: 1vw;
+}
+.arrow-big {
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  color: var(--title);
+}
+
+/* ═══ 特殊效果 ═══ */
+.highlight-pulse {
+  animation: highlightPulse 2s infinite;
+}
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(255, 140, 0, 0); }
+}
+
+.qr-placeholder {
+  width: clamp(200px, 25vw, 320px);
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #000;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
+.big-code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 24px;
+  font-size: clamp(14px, 1.2vw, 20px);
+  color: var(--keyword);
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.6;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2vw;
+  margin-top: 2vh;
+}
+.kpi {
+  text-align: center;
+  padding: 24px 12px;
+}
+.kpi .big {
+  font-size: clamp(48px, 5vw, 88px);
+  color: var(--keyword);
+  font-weight: 900;
+  line-height: 1;
+}
+.kpi .lbl {
+  color: var(--muted);
+  font-size: clamp(14px, 1.2vw, 20px);
+  margin-top: 8px;
+}
+
+.speaker-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3vw;
+  align-items: center;
+  padding: 3vh 2vw;
+}
+.speaker-avatar {
+  width: clamp(120px, 15vw, 220px);
+  aspect-ratio: 1;
+  background: var(--card);
+  border: 3px solid var(--title);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--title);
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 900;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- 進度條與頁碼                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="topbar"><div class="topbar-fill" id="topbarFill"></div></div>
+<div class="pageinfo"><span id="curPage">1</span> / <span id="totalPages">22</span></div>
+<div class="nav-hints">← → 翻頁 · F 全螢幕 · P 筆記</div>
+
+<!-- 點擊導航 -->
+<div class="navzone left" onclick="prev()"></div>
+<div class="navzone right" onclick="next()"></div>
+
+<!-- 簡報者筆記區（按 P 開關） -->
+<div class="notes" id="notesBox">
+  <div class="notes-label">簡報者筆記</div>
+  <div id="notesContent">（此頁無筆記）</div>
+</div>
+
+<div class="deck" id="deck">
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Slide 1：封面                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<section class="slide active" data-notes="主講開場：歡迎各位老師，今天的研習主題是『AI 玩數學 — 用 Gemini 設計實境解謎』。接下來兩個小時，我會帶大家從最基礎的『什麼是 Gem』一路做到『完整的 HTML 遊戲網頁』。">
+  <div class="cover-grid">
+    <div>
+      <h1 class="title" style="font-size: clamp(48px, 7vw, 120px);">AI 玩<span class="kw">數學</span></h1>
+      <h2 class="subtitle" style="color: var(--text); margin-top: 2vh;">用 Gemini 設計<span class="kw">實境解謎</span>課堂</h2>
+      <div class="cover-subline">2026.04.18 · 康軒出版 · 線上研習</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 2：講者 -->
+<section class="slide" data-notes="我是宋睿偉，朋友叫我三師爸。在新竹市光武國中任教。這幾年主要在做 AI 輔助教學的實驗，特別是怎麼讓『數學』變得有理由被學。">
+  <div class="speaker-card">
+    <div class="speaker-avatar">師</div>
+    <div>
+      <h1 class="title">三師爸・<span class="kw">宋睿偉</span></h1>
+      <p class="lead" style="margin-top: 1vh;">新竹市光武國中 · 數學教師</p>
+      <ul class="bullets" style="margin-top: 2vh;">
+        <li>《AI 玩數學》作者（康軒出版）</li>
+        <li>三師爸 Sense Bar · YouTube 頻道</li>
+        <li>專注：<span class="kw">AI × 數學 × 遊戲化</span> 教學</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 3：議程 -->
+<section class="slide" data-notes="今天會分五段：為什麼、三階段流程、Stage 1 謎題 Gem 示範、跨科展示、實作練習。過程中會有兩次 IRS 互動，大家準備好手機或平板。">
+  <h1 class="title">今日議程</h1>
+  <div class="three-col" style="margin-top: 3vh;">
+    <div class="card">
+      <div class="big-num">1</div>
+      <h3>為什麼 AI × 解謎？</h3>
+      <p class="muted">學生為什麼不想算題目；解謎怎麼變成推動任務的<span class="kw">鑰匙</span></p>
+    </div>
+    <div class="card">
+      <div class="big-num">2</div>
+      <h3>三階段流程</h3>
+      <p class="muted">謎題生成 → 劇本包裝 → 網頁遊戲<span class="kw">完整 pipeline</span></p>
+    </div>
+    <div class="card">
+      <div class="big-num">3</div>
+      <h3>Gem 深入</h3>
+      <p class="muted">Gem 的<span class="kw">七段結構</span>、雙模式視覺、對照表設計</p>
+    </div>
+    <div class="card">
+      <div class="big-num">4</div>
+      <h3>跨科應用</h3>
+      <p class="muted"><span class="kw">18 個現成 Gem</span>：自然、國文、英文、社會、音樂、美術…</p>
+    </div>
+    <div class="card">
+      <div class="big-num">5</div>
+      <h3>實作練習</h3>
+      <p class="muted">動手做一個<span class="kw">自己的 Gem</span>，現場 IRS 分享</p>
+    </div>
+    <div class="card" style="border-color: var(--title);">
+      <div class="big-num">🎯</div>
+      <h3>帶走什麼</h3>
+      <p class="muted">21 份 paste-ready YAML、一套完整 pipeline、<span class="kw">一個可立即用的 iPad 遊戲</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 4：學生的困境 -->
+<section class="slide" data-notes="先講為什麼。我們常常覺得學生不會算，但仔細觀察，很多時候他們不是不會算——是『不知道為什麼要算』。這是動機問題，不是能力問題。">
+  <h1 class="title">學生的困境</h1>
+  <div class="two-col">
+    <div>
+      <p class="lead" style="margin-bottom: 3vh;">在數學課堂中，學生常常——</p>
+      <p class="lead"><span class="kw">不是不會計算</span>，</p>
+      <p class="lead">而是不清楚</p>
+      <p class="lead" style="color: var(--title); font-weight: 900; font-size: clamp(32px, 3.5vw, 56px); margin-top: 2vh;">「為什麼要算這一題？」</p>
+    </div>
+    <div>
+      <div class="card" style="border-color: var(--bad); padding: 32px;">
+        <h3 style="color: var(--bad);">傳統練習</h3>
+        <p style="font-size: clamp(18px, 1.6vw, 26px); margin-top: 12px;">第 3 題：計算 3x − 5 = 10 的解。</p>
+        <p class="muted" style="margin-top: 16px; font-style: italic;">→ 學生：「為什麼要算？」</p>
+      </div>
+      <div class="card" style="border-color: var(--good); padding: 32px; margin-top: 2vh;">
+        <h3 style="color: var(--good);">解謎情境</h3>
+        <p style="font-size: clamp(18px, 1.6vw, 26px); margin-top: 12px;">魔神門上閃爍方程式，<span class="kw">解出 x 才能解鎖</span>。</p>
+        <p class="muted" style="margin-top: 16px; font-style: italic;">→ 學生：「我要破關！」</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 5：解謎的價值 -->
+<section class="slide" data-notes="實境解謎是結合『密室逃脫』與『大地遊戲』的沉浸式學習。當學生為了破關而主動計算，數學就從被動練習變成主動工具。">
+  <h1 class="title">實境解謎＝<span class="kw">任務型學習</span></h1>
+  <p class="lead" style="margin-top: 2vh;">密室逃脫 × 大地遊戲 × 學科知識</p>
+  <div class="kpi-row" style="margin-top: 5vh;">
+    <div class="kpi">
+      <div class="big">🎯</div>
+      <div class="lbl">主動計算</div>
+    </div>
+    <div class="kpi">
+      <div class="big">🧩</div>
+      <div class="lbl">跨科串連</div>
+    </div>
+    <div class="kpi">
+      <div class="big">⚡</div>
+      <div class="lbl">即時回饋</div>
+    </div>
+    <div class="kpi">
+      <div class="big">👥</div>
+      <div class="lbl">團隊合作</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top: 5vh; border-color: var(--title); text-align: center; padding: 32px;">
+    <p class="lead" style="color: var(--keyword);">「數學不再只是練習題，而是<span style="color: var(--title); font-weight: 900;">推動任務前進、完成關卡的關鍵工具</span>。」</p>
+  </div>
+</section>
+
+<!-- Slide 6：AI 的三大幫助 -->
+<section class="slide" data-notes="AI 能在三個地方幫老師：創意、出題、製作。特別是 Gemini Gems 可以固定規則，讓我們不用每次重寫 prompt。">
+  <h1 class="title">AI 在這裡幫我們什麼？</h1>
+  <div class="three-col" style="margin-top: 4vh;">
+    <div class="card">
+      <div class="big-num">💡</div>
+      <h3>創意來源</h3>
+      <p>告訴 AI 教學主題，<span class="kw">秒產出多種情境腳本</span>可選。</p>
+    </div>
+    <div class="card">
+      <div class="big-num">⚙️</div>
+      <h3>出題引擎</h3>
+      <p>建立<span class="kw">固定規則的 Gem</span>，輸入謎底自動產圖。</p>
+    </div>
+    <div class="card">
+      <div class="big-num">🌐</div>
+      <h3>網頁製作</h3>
+      <p>不需程式背景，<span class="kw">自然語言產 HTML</span>，Canvas 一鍵上線。</p>
+    </div>
+  </div>
+  <p class="lead muted" style="text-align: center; margin-top: 4vh;">AI 不能取代老師的判斷，但能<span class="kw">大幅縮短準備時間</span>。</p>
+</section>
+
+<!-- Slide 7：三階段流程總覽 -->
+<section class="slide" data-notes="核心工作流：Stage 1 產謎題圖、Stage 2 包裝劇本、Stage 3 產網頁。今天會一個一個拆給大家看。">
+  <h1 class="title">三階段流程（四棒接力）</h1>
+  <div class="big-pipeline" style="margin-top: 5vh;">
+    <div class="pipeline-stage">
+      <div class="stage-num">STAGE 0</div>
+      <h4>產生器</h4>
+      <p><span class="kw">Meta-Gem</span><br>自動設計 Stage 1 Gem</p>
+    </div>
+    <div class="arrow-big">→</div>
+    <div class="pipeline-stage">
+      <div class="stage-num">STAGE 1</div>
+      <h4>謎題 Gem</h4>
+      <p>輸入謎底<br><span class="kw">產謎題圖＋對照表</span></p>
+    </div>
+    <div class="arrow-big">→</div>
+    <div class="pipeline-stage">
+      <div class="stage-num">STAGE 2</div>
+      <h4>劇本 Gem</h4>
+      <p>謎題清單<br><span class="kw">→ 沉浸式劇本</span></p>
+    </div>
+    <div class="arrow-big">→</div>
+    <div class="pipeline-stage highlight">
+      <div class="stage-num">STAGE 3</div>
+      <h4>網頁 Gem</h4>
+      <p>劇本<br><span class="kw">→ iPad HTML</span></p>
+    </div>
+  </div>
+  <p class="muted" style="text-align: center; margin-top: 4vh; font-size: clamp(16px, 1.4vw, 22px);">全部 <span class="kw">21 份 paste-ready YAML</span> 已備好，GitHub 隨時取用</p>
+</section>
+
+<!-- Slide 8：Gem 是什麼 -->
+<section class="slide" data-notes="Gem 不是『跟 AI 聊天』，而是『固定規則的出題機器』。老師設計一次，後面產出風格、邏輯都一致。">
+  <h1 class="title">什麼是 <span class="kw">Gem</span>？</h1>
+  <div class="two-col">
+    <div>
+      <p class="lead" style="margin-bottom: 3vh;">Gem = <span class="kw">可自訂的專屬 AI 助手</span></p>
+      <ul class="bullets">
+        <li>一次設定出題規則與方向</li>
+        <li>每次只需輸入<span class="kw">謎底</span></li>
+        <li>自動產出風格一致、邏輯穩定的題目</li>
+        <li>減少重複出題與調整的負擔</li>
+      </ul>
+    </div>
+    <div class="card" style="padding: 32px;">
+      <h3 style="color: var(--keyword);">運作流程</h3>
+      <div class="big-code" style="margin-top: 16px;">老師輸入：MATH
+     ↓
+Gem 自動處理：
+  M → 鋁 (Al)
+  A → 氫 (H)
+  T → 鈣 (Ca)
+  H → 氧 (O)
+     ↓
+產出兩張圖：
+  圖 A：謎題圖（中文名）
+  圖 B：對照表圖</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 9：Gem 的七段結構 -->
+<section class="slide" data-notes="每個謎題 Gem 都有七段。缺一個就會出問題。這是我從 18 個實作中提煉出來的標準。">
+  <h1 class="title">Gem 的<span class="kw">七段結構</span></h1>
+  <div class="three-col" style="margin-top: 3vh;">
+    <div class="card"><h3>1. profile</h3><p class="muted">身分證：name / role / description</p></div>
+    <div class="card" style="border-color: var(--title);"><h3>2. knowledge_base</h3><p class="muted"><span class="kw">翻譯規則（靈魂）</span>直接寫出完整對應</p></div>
+    <div class="card"><h3>3. system_behavior</h3><p class="muted">primary_directive + workflow + prohibitions</p></div>
+    <div class="card"><h3>4. puzzle_image</h3><p class="muted"><span class="kw">雙模式</span>：沉浸 + 教學</p></div>
+    <div class="card"><h3>5. reference_chart</h3><p class="muted">對照表圖（學生解謎用道具）</p></div>
+    <div class="card"><h3>6. user_manual</h3><p class="muted">老師使用手冊＋推薦謎底＋風險提醒</p></div>
+  </div>
+  <p class="lead" style="text-align: center; margin-top: 3vh; color: var(--keyword);">💡 <span style="color: var(--title);">knowledge_base 是靈魂</span>——必須<span class="kw">完整寫出</span>，不能靠 AI 記憶</p>
+</section>
+
+<!-- Slide 10：兩種設計模式 -->
+<section class="slide" data-notes="兩種模式各有用途。靜默模式快但容易錯；驗證模式慢但準確。簡單對照用靜默，複雜或易錯的用驗證。">
+  <h1 class="title">兩種設計模式</h1>
+  <div class="two-col" style="margin-top: 3vh;">
+    <div class="card" style="padding: 32px;">
+      <h3 style="color: var(--title);">模式 A：靜默生圖</h3>
+      <p style="margin: 16px 0;">老師輸入 → AI <span class="kw">直接產圖</span></p>
+      <p class="muted">✓ 快速批量產題</p>
+      <p class="muted">✓ 對應簡單（A-Z 摩斯、A1Z26）</p>
+      <p class="muted">✓ 謎底短（2-4 字）</p>
+      <p style="margin-top: 16px; color: var(--keyword);">代表：摩斯、等差、代數偏移鎖、方程式圖形</p>
+    </div>
+    <div class="card" style="padding: 32px;">
+      <h3 style="color: var(--title);">模式 B：先驗算後生圖</h3>
+      <p style="margin: 16px 0;">老師輸入 → AI <span class="kw">驗算表</span> → 確認 → 產圖</p>
+      <p class="muted">✓ AI 易出錯的知識（中文筆畫、20+ 元素）</p>
+      <p class="muted">✓ 精確度要求高（時鐘、座標）</p>
+      <p class="muted">✓ 正式使用（研習、比賽）</p>
+      <p style="margin-top: 16px; color: var(--keyword);">代表：元素週期表、時鐘、筆畫、注音、音節</p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 11：摩斯密碼示範 -->
+<section class="slide" data-notes="第一個示範：摩斯密碼。輸入 CHILD，Gem 垂直排出四行摩斯符號。圖中絕對不出現字母。">
+  <h1 class="title">範例 1：<span class="kw">摩斯密碼</span>（數學／英文）</h1>
+  <div class="puzzle-demo">
+    <div class="demo-img" data-placeholder="demo-morse-puzzle">
+      <img data-placeholder="demo-morse-puzzle" src="" alt="" onerror="this.style.display='none'">
+      <div class="pl-label">puzzle | data-placeholder="demo-morse-puzzle"</div>
+      <div>
+        <p>📜 謎題圖示意</p>
+        <p style="font-size: 32px; color: var(--keyword); margin-top: 10px; font-family: monospace; line-height: 2;">
+          -.-. ▪<br>.... ▪<br>.. ▪<br>.-.. ▪<br>-.. ▪
+        </p>
+        <p class="muted" style="margin-top: 10px;">（垂直排列、右下角圖例）</p>
+      </div>
+    </div>
+    <div class="demo-img" data-placeholder="demo-morse-reference">
+      <img data-placeholder="demo-morse-reference" src="" alt="" onerror="this.style.display='none'">
+      <div class="pl-label">reference | data-placeholder="demo-morse-reference"</div>
+      <div>
+        <p>🔑 對照表示意</p>
+        <p style="font-size: 14px; margin-top: 10px; font-family: monospace; line-height: 1.6; color: var(--keyword);">
+          A .- &nbsp; B -... &nbsp; C -.-.<br>
+          D -.. &nbsp; E . &nbsp; F ..-.<br>
+          G --. &nbsp; H .... &nbsp; I ..<br>
+          ...（完整 A-Z 對照）
+        </p>
+      </div>
+    </div>
+  </div>
+  <p class="demo-caption" style="margin-top: 2vh;">輸入 <code>CHILD</code> → Gem 產出左右兩張圖｜學生看左圖、查右圖、拼出答案</p>
+</section>
+
+<!-- Slide 12：代數偏移鎖示範 -->
+<section class="slide" data-notes="代數偏移鎖是『一元一次方程式＋凱薩密碼』。上半看方程式解 x，下半把密文每個字母加 x。跨科設計。">
+  <h1 class="title">範例 2：<span class="kw">代數偏移鎖</span>（Split Panel）</h1>
+  <div class="two-col" style="margin-top: 2vh;">
+    <div class="card" style="padding: 28px;">
+      <h3 style="color: var(--title);">上半部：古卷軸方程式</h3>
+      <div style="font-size: clamp(32px, 3vw, 48px); text-align: center; padding: 24px; color: var(--keyword);">
+        3<i>x</i> − 5 = 10
+      </div>
+      <p class="muted" style="text-align: center;">學生解出 <span class="kw">x = 5</span></p>
+    </div>
+    <div class="card" style="padding: 28px; background: #000;">
+      <h3 style="color: var(--title);">下半部：石板大字密文</h3>
+      <div style="font-size: clamp(48px, 5vw, 88px); text-align: center; padding: 24px; font-weight: 900; letter-spacing: 0.2em; color: var(--text);">
+        HVOC
+      </div>
+      <p class="muted" style="text-align: center;">每字母 +5 位 → <span class="kw">MATH</span></p>
+    </div>
+  </div>
+  <p class="demo-caption" style="margin-top: 2vh;">輸入 <code>5, MATH</code>｜Gem 產出 split-panel 單張圖｜同時考方程式＋凱薩密碼</p>
+</section>
+
+<!-- Slide 13：等差數列示範 -->
+<section class="slide" data-notes="等差數列的巧思：每位數字藏在等差數列的『入侵者』裡。學生要找出不屬於規律的那個數。4826 四位數就產生四排數列。">
+  <h1 class="title">範例 3：<span class="kw">等差數列密碼</span></h1>
+  <div class="big-code" style="margin-top: 3vh; text-align: center;">
+輸入：4826
+     ↓
+古卷軸顯示四排數列：
+
+  2, 5, 8,  <span style="background: rgba(255,215,0,0.3); color: var(--keyword); padding: 4px 8px; border-radius: 4px;"> 4 </span>, 11, 14, 17 &nbsp; ← 公差 3，入侵者是 4
+  9, 7, 5, 3,  <span style="background: rgba(255,215,0,0.3); color: var(--keyword); padding: 4px 8px; border-radius: 4px;"> 8 </span>, -1, -3 &nbsp; ← 公差 -2，入侵者是 8
+  <span style="background: rgba(255,215,0,0.3); color: var(--keyword); padding: 4px 8px; border-radius: 4px;"> 2 </span>, -5, -10, -15, -20, -25, -30 &nbsp; ← 公差 -5，入侵者是 2
+  4, 10, 16, 22,  <span style="background: rgba(255,215,0,0.3); color: var(--keyword); padding: 4px 8px; border-radius: 4px;"> 6 </span>, 34, 40 &nbsp; ← 公差 6，入侵者是 6
+     ↓
+答案：<span style="color: var(--title); font-size: 1.5em; font-weight: 900;">4826</span></div>
+  <p class="demo-caption">設計巧思：公差不能是 ±1（避免學生猜）｜支援遞增/遞減｜可加風格關鍵字（如「3829 賽博龐克」）</p>
+</section>
+
+<!-- Slide 14：方程式圖形示範 -->
+<section class="slide" data-notes="方程式圖形密碼：每個數字 0-9 對應一個方程式圖形特徵。學生畫圖後查對照表得到數字。五位數就四排方程式。">
+  <h1 class="title">範例 4：<span class="kw">二元一次方程式圖形</span></h1>
+  <div class="two-col" style="margin-top: 2vh;">
+    <div>
+      <h3 class="section">數字 → 方程式映射</h3>
+      <div class="big-code" style="font-size: 0.85em;">0: y = k        水平線（上）
+1: y = -k       水平線（下）
+2: x = k        鉛直線（右）
+3: x = -k       鉛直線（左）
+4: x - y = -k   ↗ 避開 Q4
+5: x - y = k    ↗ 避開 Q2
+6: x + y = k    ↘ 避開 Q3
+7: x + y = -k   ↘ 避開 Q1
+8: x - y = 0    過原點 ↗
+9: x + y = 0    過原點 ↘</div>
+    </div>
+    <div>
+      <h3 class="section">學生動作</h3>
+      <ul class="bullets">
+        <li>拿到卷軸：<span class="kw">4 個方程式</span></li>
+        <li>在方格紙上<span class="kw">自行畫圖</span></li>
+        <li>對照表查特徵 → 得數字</li>
+        <li>按順序拼出謎底</li>
+      </ul>
+      <div class="card" style="margin-top: 2vh; border-color: var(--title);">
+        <p style="color: var(--keyword);">📌 亮點：k 每次隨機（1–5）</p>
+        <p class="muted" style="font-size: 0.9em; margin-top: 6px;">避免學生『背答案』——同一個謎底每次出的方程式不同</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 15：IRS #1 — 哪個範例最想帶回教室？ -->
+<section class="slide irs-slide" data-notes="第一次 IRS 互動。請大家掃 QR 或輸入網址，進入後選一個你最想帶回教室的謎題類型。">
+  <div class="irs-question">
+    <div class="label">🎯 IRS 互動 · 第 1 題</div>
+    <h3>剛才四個範例，<span class="kw">你最想帶回教室的是哪一個</span>？</h3>
+  </div>
+  <div class="irs-chart" id="irsChart1">
+    <div class="irs-bar"><div class="irs-bar-label">摩斯密碼</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">代數偏移鎖</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">等差數列</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">方程式圖形</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+  </div>
+  <div class="irs-controls">
+    <button class="btn primary" onclick="publishIRS('q1', '剛才四個範例，你最想帶回教室的是哪一個？', ['摩斯密碼','代數偏移鎖','等差數列','方程式圖形'])">📢 開始作答</button>
+    <button class="btn danger" onclick="stopIRS()">⏹ 停止作答</button>
+    <button class="btn" onclick="resetIRS('q1')">🔄 清空結果</button>
+    <div class="irs-status" id="irsStatus1"><span class="dot"></span><span id="irsStatusText1">未連線</span></div>
+    <div class="join-box" style="flex: 1; min-width: 280px; padding: 12px 18px;">
+      <div class="hint">學生加入</div>
+      <div class="url" style="font-size: 20px;" data-placeholder="student-url">https://your-site/join.html</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 16：跨科展示總覽 -->
+<section class="slide" data-notes="18 個 Gem 橫跨 9 個科目。這張是總覽，下一頁展開細節。所有 Gem 的 YAML 都在 GitHub。">
+  <h1 class="title"><span class="kw">18 個</span>現成 Gem · 跨 9 科</h1>
+  <div class="gem-grid">
+    <div class="gem-tile"><div class="subject-tag">自然</div><h4>元素週期表</h4><p>英文單字 → 元素中文名（兩層反查）</p></div>
+    <div class="gem-tile"><div class="subject-tag">社會 A</div><h4>朝代順序</h4><p>數字 → 朝代代表物</p></div>
+    <div class="gem-tile"><div class="subject-tag">社會 B</div><h4>世界首都</h4><p>英文 → 首都地標 / 國旗</p></div>
+    <div class="gem-tile"><div class="subject-tag">社會 C</div><h4>三科解碼盤</h4><p>歷史＋地理＋公民整合</p></div>
+    <div class="gem-tile"><div class="subject-tag">音樂</div><h4>簡譜密碼</h4><p>1-7 → 五線譜／鋼琴鍵位</p></div>
+    <div class="gem-tile"><div class="subject-tag">美術</div><h4>色相環密碼</h4><p>伊登 12 色相環鐘點</p></div>
+    <div class="gem-tile"><div class="subject-tag">科技</div><h4>二進位密碼</h4><p>4 位元 LED / 打孔卡</p></div>
+    <div class="gem-tile"><div class="subject-tag">健教</div><h4>六大類食物</h4><p>1-6 → 食物照片 / 插畫</p></div>
+    <div class="gem-tile"><div class="subject-tag">數學 ×6</div><h4>完整數學系列</h4><p>摩斯 / 等差 / 方程式圖形 / 代數偏移 / 時鐘 / 直線攔截</p></div>
+    <div class="gem-tile"><div class="subject-tag">國文</div><h4>筆畫密碼</h4><p>漢字筆畫數 → 數字</p></div>
+    <div class="gem-tile"><div class="subject-tag">國文</div><h4>注音序號</h4><p>37 注音符號 → 01-37</p></div>
+    <div class="gem-tile"><div class="subject-tag">英文</div><h4>音節數密碼</h4><p>單字音節 → 數字</p></div>
+  </div>
+</section>
+
+<!-- Slide 17：元素週期表設計亮點 -->
+<section class="slide" data-notes="元素週期表是『兩層反查』設計：謎題圖只顯示中文名，學生要查兩次對照表。難度顯著比只看符號高。">
+  <h1 class="title">設計亮點：<span class="kw">兩層反查</span>（元素週期表）</h1>
+  <div class="big-code" style="margin-top: 3vh;">
+  <span style="color: var(--title);">謎題圖只顯示：</span>  鋁、氫、鈣、氧
+
+  <span style="color: var(--title);">學生第一層查：</span>  鋁 → Al、氫 → H、鈣 → Ca、氧 → O
+  <span style="color: var(--title);">學生第二層查：</span>  Al → 13 → M、H → 1 → A、Ca → 20 → T、O → 8 → H
+
+  <span style="color: var(--keyword); font-size: 1.3em;">→ 得出謎底：MATH</span></div>
+  <div class="card" style="margin-top: 3vh; border-color: var(--title);">
+    <p class="lead"><span class="kw">設計巧思</span>：用中文名而非符號，迫使學生必須熟悉「中文名 ↔ 元素符號」對應——不能靠背符號速通，真正測驗週期表學習成效。</p>
+  </div>
+</section>
+
+<!-- Slide 18：Stage 0 產生器 -->
+<section class="slide" data-notes="最酷的是 Stage 0：一個會自動『生出其他 Gem』的 meta-Gem。你用自然語言描述想要的謎題，它產 YAML 給你。來源是 PDF 2 的 Image_Only_Bot_Architect_Pro。">
+  <h1 class="title">Stage 0：<span class="kw">謎題 Gem 產生器</span></h1>
+  <p class="lead" style="margin-top: 2vh;">一個會「<span class="kw">生出其他 Gem</span>」的 meta-Gem</p>
+  <div class="two-col" style="margin-top: 3vh;">
+    <div>
+      <h3 class="section">老師只要說</h3>
+      <div class="card" style="padding: 20px;">
+        <p style="font-style: italic; color: var(--keyword);">「我想做一個太陽系行星密碼，讓學生用行星代表數字。」</p>
+      </div>
+    </div>
+    <div>
+      <h3 class="section">Gem 自動產出</h3>
+      <ul class="bullets">
+        <li>問 5 個釐清問題</li>
+        <li>輸出 Gem 設計摘要</li>
+        <li>確認後產<span class="kw">完整 YAML</span>（200-400 行）</li>
+        <li>直接貼 Gemini Gem 就能用</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted" style="text-align: center; margin-top: 3vh;">改寫自 PDF《<span class="kw">Image_Only_Bot_Architect_Pro v2.0</span>》，我們升級到 v2.1：全繁中 + 雙模式 + 結構化訪談</p>
+</section>
+
+<!-- Slide 19：Stage 2 劇本生成 -->
+<section class="slide" data-notes="Stage 2 是把謎題清單包裝成劇本。重點是每關都要有『為什麼主角想解這題』的動機，而不只是『解完才能過』。">
+  <h1 class="title">Stage 2：<span class="kw">情境解謎敘事建築師</span></h1>
+  <div class="two-col">
+    <div>
+      <h3 class="section">輸入（四欄 schema）</h3>
+      <div class="big-code" style="font-size: 0.85em;">theme: 兒童節守門魔神
+style_preset: 奇幻
+puzzles:
+  - {level: 1, password: "CHILD",
+     puzzle_type: 摩斯,
+     context: "泛黃電碼對照表"}
+  - {level: 2, password: "TEENAGER",
+     puzzle_type: 代數偏移鎖,
+     context: "門上方程式＋亂碼"}
+  ...</div>
+    </div>
+    <div>
+      <h3 class="section">Gem 強制 4 個原則</h3>
+      <ul class="bullets">
+        <li><span class="kw">難度曲線</span>：前易後難、情感漸強</li>
+        <li><span class="kw">每關動機</span>：主角內心為何要解這題</li>
+        <li><span class="kw">關卡橋接</span>：前關道具成為後關線索</li>
+        <li><span class="kw">結局回呼</span>：結尾必須呼應開場意象</li>
+      </ul>
+      <p class="muted" style="margin-top: 2vh; font-size: clamp(14px, 1.2vw, 20px);">輸出含 7 段落 + 技術參考 JSON（給 Stage 3 吃）</p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 20：Stage 3 網頁遊戲 -->
+<section class="slide" data-notes="Stage 3 把劇本變成 iPad 遊戲。單一 HTML、橫向優先、每關自動產場景圖、謎題與對照表預留佔位讓老師後補。">
+  <h1 class="title">Stage 3：<span class="kw">解謎遊戲網頁建構師</span></h1>
+  <p class="lead" style="margin-top: 2vh;">輸出：<span class="kw">單一 self-contained HTML</span>｜iPad 橫向優化</p>
+  <div class="three-col" style="margin-top: 3vh;">
+    <div class="card">
+      <h3>🖼️ 場景圖</h3>
+      <p class="muted">每關自動生 16:9 場景圖，<span class="kw">嚴禁露出謎題內容</span></p>
+    </div>
+    <div class="card">
+      <h3>📜 謎題按鈕</h3>
+      <p class="muted">佔位按鈕，老師上傳正式圖後<span class="kw">搜尋 data-placeholder 替換</span></p>
+    </div>
+    <div class="card">
+      <h3>🔑 對照表按鈕</h3>
+      <p class="muted">同樣佔位，可用 <code>reference-shared-{type}</code> 共用</p>
+    </div>
+    <div class="card">
+      <h3>✏️ 答案輸入</h3>
+      <p class="muted">驗證後：錯誤抖動 + 紅閃；正確解鎖 + 轉場</p>
+    </div>
+    <div class="card">
+      <h3>📊 進度條</h3>
+      <p class="muted">N 個點，解鎖變綠</p>
+    </div>
+    <div class="card">
+      <h3>🎵 音效</h3>
+      <p class="muted">解鎖音、失敗音、BGM（使用者互動後啟動）</p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 21：IRS #2 — 實作練習 -->
+<section class="slide irs-slide" data-notes="第二次 IRS 互動。請大家開始動手，用 Stage 0 產生器做一個自己科目的謎題 Gem。5 分鐘後我會在 IRS 看看大家選了什麼科目。">
+  <div class="irs-question">
+    <div class="label">🎯 IRS 互動 · 第 2 題</div>
+    <h3><span class="kw">實作練習</span>｜你打算用 Stage 0 做哪個科目的 Gem？</h3>
+  </div>
+  <div class="irs-chart" id="irsChart2">
+    <div class="irs-bar"><div class="irs-bar-label">數學</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">國文</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">英文</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">自然</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">社會</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+    <div class="irs-bar"><div class="irs-bar-label">其他</div><div class="irs-bar-track"><div class="irs-bar-fill" style="width: 0%"></div></div><div class="irs-bar-count">0</div></div>
+  </div>
+  <div class="irs-controls">
+    <button class="btn primary" onclick="publishIRS('q2', '你打算用 Stage 0 做哪個科目的 Gem？', ['數學','國文','英文','自然','社會','其他'])">📢 開始作答</button>
+    <button class="btn danger" onclick="stopIRS()">⏹ 停止作答</button>
+    <button class="btn" onclick="resetIRS('q2')">🔄 清空結果</button>
+    <div class="irs-status" id="irsStatus2"><span class="dot"></span><span id="irsStatusText2">未連線</span></div>
+  </div>
+</section>
+
+<!-- Slide 22：實戰流程與資源 -->
+<section class="slide" data-notes="完整流程走一次：用 Stage 0 設計 Gem、用 Gem 產謎題圖、上傳 duk.tw、Stage 2 寫劇本、Stage 3 生網頁、替換圖片、發布。熟練後一套遊戲 30-60 分鐘。">
+  <h1 class="title">完整實戰流程</h1>
+  <div class="big-code" style="margin-top: 3vh; font-size: clamp(14px, 1.2vw, 18px);">Step 1 <span style="color: var(--title);">用 Stage 0 產生器</span> 設計自己的 Stage 1 Gem（只做一次）
+Step 2 <span style="color: var(--title);">用 Stage 1 Gem</span>  產各關謎題圖與對照表（每次活動 N 關）
+Step 3 <span style="color: var(--title);">上傳 duk.tw</span>     得到 8 張圖的直連 URL
+Step 4 <span style="color: var(--title);">用 Stage 2 Gem</span>  輸入謎題清單，得劇本＋technical_ref
+Step 5 <span style="color: var(--title);">用 Stage 3 Gem</span>  貼劇本，得單一 .html 檔
+Step 6 <span style="color: var(--title);">替換圖片</span>        搜尋 data-placeholder 替換 src
+Step 7 <span style="color: var(--title);">發布</span>            GitHub Pages / Netlify Drop / Canvas 共用</div>
+  <div class="kpi-row" style="margin-top: 3vh;">
+    <div class="kpi"><div class="big">21</div><div class="lbl">paste-ready Gem YAML</div></div>
+    <div class="kpi"><div class="big">9</div><div class="lbl">科目覆蓋</div></div>
+    <div class="kpi"><div class="big">30-60</div><div class="lbl">分鐘完成一套遊戲</div></div>
+    <div class="kpi"><div class="big">1</div><div class="lbl">次設計、永久使用</div></div>
+  </div>
+</section>
+
+<!-- Slide 23：Q&A + 資源 -->
+<section class="slide" data-notes="謝謝大家。所有 Gem YAML 都在 GitHub 開源，掃 QR 即可取得。有問題歡迎私訊或在研習群組留言。">
+  <h1 class="title">Q&A · <span class="kw">資源取得</span></h1>
+  <div class="two-col" style="margin-top: 3vh;">
+    <div>
+      <h3 class="section">GitHub Repo（公開）</h3>
+      <div class="big-code" style="font-size: clamp(16px, 1.5vw, 24px); padding: 32px;">mathruffian-dot /
+  <span style="color: var(--keyword);">2026-kh-puzzle</span></div>
+      <ul class="bullets" style="margin-top: 3vh;">
+        <li><code>code/</code> — <span class="kw">21 份 Gem YAML</span>（paste-ready）</li>
+        <li><code>簡報.html</code> — 本簡報</li>
+        <li><code>如何設計自己的謎題Gem.md</code> — 教學指南</li>
+        <li><code>115(1)AI玩數學.pdf</code> — 康軒完整書冊</li>
+      </ul>
+    </div>
+    <div style="display: grid; place-items: center;">
+      <div class="qr-placeholder" data-placeholder="github-qr">QR Code<br>（GitHub Repo）<br><span style="font-size: 11px; color: #666; margin-top: 8px;">data-placeholder="github-qr"</span></div>
+      <p class="muted" style="margin-top: 2vh; text-align: center;">掃一掃<br>取得全部資源</p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 24：謝幕 -->
+<section class="slide" data-notes="謝謝大家今天的參與。祝各位在自己的課堂上也能做出屬於自己的解謎遊戲。">
+  <div class="cover-grid">
+    <div>
+      <h1 class="title" style="font-size: clamp(64px, 8vw, 140px);">謝謝大家</h1>
+      <p class="lead" style="color: var(--keyword); margin-top: 3vh;">讓<span style="color: var(--title);">每個科目</span>都有自己的解謎遊戲</p>
+      <div class="cover-subline" style="margin-top: 4vh;">三師爸・宋睿偉｜2026.04.18</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- JavaScript                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<script type="module">
+// ── Firebase 初始化 ─────────────────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getFirestore, doc, setDoc, getDocs, addDoc, collection,
+  query, where, onSnapshot, deleteDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAYQhNavPSce17XtvDC5xnXyl9iUhW9KjA",
+  authDomain: "teacherstudy-109ef.firebaseapp.com",
+  projectId: "teacherstudy-109ef",
+  storageBucket: "teacherstudy-109ef.firebasestorage.app",
+  messagingSenderId: "196599230156",
+  appId: "1:196599230156:web:cfe55d364df3ae1b9d5c69"
+};
+
+const app = initializeApp(firebaseConfig);
+const fdb = getFirestore(app);
+const sessionDoc = doc(fdb, 'irs_session', 'current');
+const responsesRef = collection(fdb, 'irs_responses');
+
+// ── 即時監聽作答 ─────────────────────────────────────
+let currentQuestionId = null;
+let unsubResponses = null;
+
+function listenToResponses(questionId) {
+  if (unsubResponses) unsubResponses();
+  currentQuestionId = questionId;
+  const q = query(responsesRef, where('question_id', '==', questionId));
+  unsubResponses = onSnapshot(q, (snap) => {
+    const counts = {};
+    snap.forEach(d => {
+      const r = d.data().response;
+      counts[r] = (counts[r] || 0) + 1;
+    });
+    renderChart(questionId, counts);
+  }, err => {
+    console.warn('onSnapshot error:', err);
+  });
+}
+
+function renderChart(questionId, counts) {
+  const chartId = questionId === 'q1' ? 'irsChart1' : 'irsChart2';
+  const chart = document.getElementById(chartId);
+  if (!chart) return;
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  const bars = chart.querySelectorAll('.irs-bar');
+  let maxCount = Math.max(1, ...Object.values(counts));
+  bars.forEach(bar => {
+    const label = bar.querySelector('.irs-bar-label').textContent.trim();
+    const count = counts[label] || 0;
+    const pct = (count / maxCount) * 100;
+    bar.querySelector('.irs-bar-fill').style.width = pct + '%';
+    bar.querySelector('.irs-bar-count').textContent = count;
+  });
+}
+
+window.publishIRS = async function(questionId, question, options) {
+  try {
+    await setDoc(sessionDoc, {
+      mode: 'single-choice',
+      question_id: questionId,
+      question, options,
+      active: true,
+      updatedAt: serverTimestamp()
+    });
+    listenToResponses(questionId);
+    updateStatus(questionId, true, '已發佈，正在收集…');
+  } catch(e) {
+    console.error(e);
+    updateStatus(questionId, false, '發佈失敗：' + e.message);
+  }
+};
+
+window.stopIRS = async function() {
+  try {
+    await setDoc(sessionDoc, { active: false, updatedAt: serverTimestamp() }, { merge: true });
+    if (currentQuestionId) updateStatus(currentQuestionId, false, '已停止作答');
+  } catch(e) { console.error(e); }
+};
+
+window.resetIRS = async function(questionId) {
+  if (!confirm('確定要清空「' + questionId + '」的作答紀錄？')) return;
+  try {
+    const q = query(responsesRef, where('question_id', '==', questionId));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) await deleteDoc(d.ref);
+    renderChart(questionId, {});
+    updateStatus(questionId, false, '已清空');
+  } catch(e) { console.error(e); alert('清空失敗：' + e.message); }
+};
+
+function updateStatus(questionId, live, text) {
+  const idx = questionId === 'q1' ? 1 : 2;
+  const el = document.getElementById('irsStatus' + idx);
+  const txt = document.getElementById('irsStatusText' + idx);
+  if (el) el.classList.toggle('live', live);
+  if (txt) txt.textContent = text;
+}
+
+// 啟動時先初始化兩個 status
+setTimeout(() => {
+  updateStatus('q1', false, '等待發佈');
+  updateStatus('q2', false, '等待發佈');
+}, 100);
+</script>
+
+<script>
+// ── 翻頁邏輯 ─────────────────────────────────────
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+document.getElementById('totalPages').textContent = total;
+let idx = 0;
+
+function go(n) {
+  idx = Math.max(0, Math.min(total - 1, n));
+  slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  document.getElementById('curPage').textContent = idx + 1;
+  document.getElementById('topbarFill').style.width = ((idx + 1) / total * 100) + '%';
+  const notes = slides[idx].dataset.notes || '（此頁無筆記）';
+  document.getElementById('notesContent').textContent = notes;
+  // 滾動到頂
+  slides[idx].scrollTop = 0;
+}
+window.next = () => go(idx + 1);
+window.prev = () => go(idx - 1);
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+  else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+  else if (e.key === 'p' || e.key === 'P') { document.getElementById('notesBox').classList.toggle('visible'); }
+  else if (e.key === 'Home') { go(0); }
+  else if (e.key === 'End') { go(total - 1); }
+});
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+// 觸控滑動
+let touchStartX = 0;
+document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 60) { dx < 0 ? next() : prev(); }
+});
+
+// URL hash 導航（分享特定頁）
+if (location.hash) {
+  const h = parseInt(location.hash.slice(1)) - 1;
+  if (!isNaN(h)) go(h);
+}
+window.addEventListener('hashchange', () => {
+  const h = parseInt(location.hash.slice(1)) - 1;
+  if (!isNaN(h)) go(h);
+});
+
+// 初始化頁碼
+go(0);
+</script>
+
+</body>
+</html>
