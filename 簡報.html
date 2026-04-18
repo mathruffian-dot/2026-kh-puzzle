@@ -690,12 +690,20 @@ table.cmp td:first-child { color: var(--keyword); font-weight: 600; }
       </ul>
       <div class="join-box" style="margin-top: 3vh;">
         <div class="hint">Padlet 網址</div>
-        <div class="url" data-placeholder="padlet-url">https://padlet.com/your-padlet-url</div>
+        <a href="https://padlet.com/mathruffian/0418-3hrhfpe7rls9uani" target="_blank"
+           class="url" data-placeholder="padlet-url"
+           style="color: var(--keyword); text-decoration: none; display: block;">
+          padlet.com/mathruffian/<br>0418-3hrhfpe7rls9uani
+        </a>
         <div class="hint">👇 請先進入，待會會跟著操作</div>
       </div>
     </div>
     <div style="display: grid; place-items: center;">
-      <div class="qr-placeholder" data-placeholder="padlet-qr">Padlet QR Code<br><span style="font-size: 11px; color: #666; margin-top: 8px;">data-placeholder="padlet-qr"</span></div>
+      <div class="qr-placeholder" data-placeholder="padlet-qr" style="padding: 12px;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=https%3A%2F%2Fpadlet.com%2Fmathruffian%2F0418-3hrhfpe7rls9uani"
+             alt="Padlet QR Code"
+             style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+      </div>
       <p class="muted" style="margin-top: 2vh; text-align: center;">掃一掃進入 Padlet</p>
     </div>
   </div>
