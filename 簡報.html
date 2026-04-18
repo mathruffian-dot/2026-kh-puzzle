@@ -602,14 +602,19 @@ table.cmp td:first-child { color: var(--keyword); font-weight: 600; }
 </section>
 
 <!-- Slide 4：趣味解謎＝動機引擎 -->
-<section class="slide" data-notes="我們通常不會跟學生解釋『為什麼要算這一題』——就算解釋了也很難說服他們。但只要換一個做法：把計算題包裝成解謎情境，學生的動機會明顯提升。重點不在『為什麼要算』，而在『給學生一個想算的理由』。">
+<section class="slide" data-notes="在課堂上加一點趣味解謎，就能明顯提升學生的學習動機。同一道方程式，放進解謎情境立刻不一樣——學生不是在『寫題目』，而是在『破關』。">
   <h1 class="title">趣味解謎＝<span class="kw">動機引擎</span></h1>
   <div class="two-col">
     <div>
-      <p class="lead" style="margin-bottom: 2vh;">我們<span class="kw">通常不會</span>跟學生解釋「為什麼要算這一題」——</p>
-      <p class="lead" style="margin-bottom: 3vh;">就算解釋了，也很難真的說服他們。</p>
-      <p class="lead" style="color: var(--title); font-weight: 900; font-size: clamp(28px, 3vw, 48px);">但只要把題目放進<span class="kw" style="color: var(--keyword);">解謎情境</span>，</p>
-      <p class="lead" style="color: var(--title); font-weight: 900; font-size: clamp(28px, 3vw, 48px); margin-top: 1vh;">學生的<span class="kw" style="color: var(--keyword);">動機</span>會明顯更強。</p>
+      <p class="lead" style="font-size: clamp(28px, 2.8vw, 44px); line-height: 1.5;">
+        在課堂上加一點<span class="kw">趣味解謎</span>，
+      </p>
+      <p class="lead" style="font-size: clamp(28px, 2.8vw, 44px); line-height: 1.5; margin-top: 2vh;">
+        學生的<span class="kw">學習動機</span>會明顯提升。
+      </p>
+      <p class="lead muted" style="margin-top: 4vh; font-size: clamp(18px, 1.5vw, 24px);">
+        同一道題，換個包裝，學生的反應完全不同 →
+      </p>
     </div>
     <div>
       <div class="card" style="border-color: var(--bad); padding: 32px;">
@@ -799,28 +804,10 @@ Gem 自動處理：
   <h1 class="title">範例 1：<span class="kw">摩斯密碼</span>（數學／英文）</h1>
   <div class="puzzle-demo">
     <div class="demo-img" data-placeholder="demo-morse-puzzle">
-      <img data-placeholder="demo-morse-puzzle" src="" alt="" onerror="this.style.display='none'">
-      <div class="pl-label">puzzle | data-placeholder="demo-morse-puzzle"</div>
-      <div>
-        <p>📜 謎題圖示意</p>
-        <p style="font-size: 32px; color: var(--keyword); margin-top: 10px; font-family: monospace; line-height: 2;">
-          -.-. ▪<br>.... ▪<br>.. ▪<br>.-.. ▪<br>-.. ▪
-        </p>
-        <p class="muted" style="margin-top: 10px;">（垂直排列、右下角圖例）</p>
-      </div>
+      <img src="img/摩斯密碼.png" alt="摩斯密碼謎題圖" data-placeholder="demo-morse-puzzle">
     </div>
     <div class="demo-img" data-placeholder="demo-morse-reference">
-      <img data-placeholder="demo-morse-reference" src="" alt="" onerror="this.style.display='none'">
-      <div class="pl-label">reference | data-placeholder="demo-morse-reference"</div>
-      <div>
-        <p>🔑 對照表示意</p>
-        <p style="font-size: 14px; margin-top: 10px; font-family: monospace; line-height: 1.6; color: var(--keyword);">
-          A .- &nbsp; B -... &nbsp; C -.-.<br>
-          D -.. &nbsp; E . &nbsp; F ..-.<br>
-          G --. &nbsp; H .... &nbsp; I ..<br>
-          ...（完整 A-Z 對照）
-        </p>
-      </div>
+      <img src="img/摩斯密碼對照表.png" alt="摩斯密碼對照表" data-placeholder="demo-morse-reference">
     </div>
   </div>
   <p class="demo-caption" style="margin-top: 2vh;">輸入 <code>CHILD</code> → Gem 產出左右兩張圖｜學生看左圖、查右圖、拼出答案</p>
@@ -927,9 +914,6 @@ Gem 自動處理：
   <span style="color: var(--title);">學生第二層查：</span>  Al → 13 → M、H → 1 → A、Ca → 20 → T、O → 8 → H
 
   <span style="color: var(--keyword); font-size: 1.3em;">→ 得出謎底：MATH</span></div>
-  <div class="card" style="margin-top: 3vh; border-color: var(--title);">
-    <p class="lead"><span class="kw">設計巧思</span>：用中文名而非符號，迫使學生必須熟悉「中文名 ↔ 元素符號」對應——不能靠背符號速通，真正測驗週期表學習成效。</p>
-  </div>
 </section>
 
 <!-- Slide 18：Stage 0 產生器 -->
@@ -1024,21 +1008,24 @@ puzzles:
   </div>
 </section>
 
-<!-- Slide 20：實戰流程與資源 -->
-<section class="slide" data-notes="完整流程走一次：用 Stage 0 設計 Gem、用 Gem 產謎題圖、上傳 duk.tw、Stage 2 寫劇本、Stage 3 生網頁、替換圖片、發布。熟練後一套遊戲 30-60 分鐘。">
-  <h1 class="title">完整實戰流程</h1>
-  <div class="big-code" style="margin-top: 3vh; font-size: clamp(14px, 1.2vw, 18px);">Step 1 <span style="color: var(--title);">用 Stage 0 產生器</span> 設計自己的 Stage 1 Gem（只做一次）
-Step 2 <span style="color: var(--title);">用 Stage 1 Gem</span>  產各關謎題圖與對照表（每次活動 N 關）
-Step 3 <span style="color: var(--title);">上傳 duk.tw</span>     得到 8 張圖的直連 URL
-Step 4 <span style="color: var(--title);">用 Stage 2 Gem</span>  輸入謎題清單，得劇本＋technical_ref
-Step 5 <span style="color: var(--title);">用 Stage 3 Gem</span>  貼劇本，得單一 .html 檔
-Step 6 <span style="color: var(--title);">替換圖片</span>        搜尋 data-placeholder 替換 src
-Step 7 <span style="color: var(--title);">發布</span>            GitHub Pages / Netlify Drop / Canvas 共用</div>
-  <div class="kpi-row" style="margin-top: 3vh;">
+<!-- Slide 20：實戰流程（KUSE 主力平台） -->
+<section class="slide" data-notes="完整流程走一次。Step 1-2 在 Gemini 產 Gem 與謎題圖。Step 3 進 KUSE 寫劇本＋製作網頁，一站式完成。Step 6 再回 KUSE 替換最終圖片。KUSE（kuse.ai）是 AI 視覺協作平台，可以把文件、圖片、連結丟上無限畫布，用 AI 直接產出簡報、文件、網頁。今天之後老師的遊戲製作都會在 KUSE 上操作。">
+  <h1 class="title">完整實戰流程（<span class="kw">KUSE</span> 為主力平台）</h1>
+  <div class="card" style="margin-top: 2vh; border-color: var(--title); padding: 14px 20px;">
+    <p style="font-size: clamp(14px, 1.2vw, 20px); line-height: 1.6;"><span class="kw">KUSE</span>（<code style="font-size: 0.9em;">kuse.ai</code>）= AI 視覺協作平台，無限畫布＋AI 協作者，一站式完成<span class="kw">製作網頁 × 寫劇本 × 替換圖片</span>。</p>
+  </div>
+  <div class="big-code" style="margin-top: 2vh; font-size: clamp(13px, 1.1vw, 17px); line-height: 1.9;">Step 1 <span style="color: var(--title);">用 Stage 0 產生器</span> 設計自己的 Stage 1 Gem（只做一次）
+Step 2 <span style="color: var(--title);">用 Stage 1 Gem</span>   產各關謎題圖與對照表
+Step 3 <span style="color: #FFD700; font-weight: 900;">【KUSE】</span><span style="color: var(--title);">寫劇本＋製作網頁</span>  一站式完成劇本與遊戲網頁
+Step 4 <span style="color: var(--title);">檢視遊戲原型</span>    試玩、確認關卡節奏順暢
+Step 5 <span style="color: var(--title);">整理正式素材</span>    準備謎題圖、對照表、場景圖
+Step 6 <span style="color: #FFD700; font-weight: 900;">【KUSE】</span><span style="color: var(--title);">替換圖片</span>       把 Step 2 的素材嵌入遊戲對應關卡
+Step 7 <span style="color: var(--title);">KUSE 一鍵發布</span>   產生分享連結，直接給學生</div>
+  <div class="kpi-row" style="margin-top: 2vh;">
     <div class="kpi"><div class="big">21</div><div class="lbl">paste-ready Gem YAML</div></div>
     <div class="kpi"><div class="big">9</div><div class="lbl">科目覆蓋</div></div>
-    <div class="kpi"><div class="big">30-60</div><div class="lbl">分鐘完成一套遊戲</div></div>
-    <div class="kpi"><div class="big">1</div><div class="lbl">次設計、永久使用</div></div>
+    <div class="kpi"><div class="big">1</div><div class="lbl">KUSE 平台完成全部</div></div>
+    <div class="kpi"><div class="big">∞</div><div class="lbl">次設計、永久使用</div></div>
   </div>
 </section>
 
